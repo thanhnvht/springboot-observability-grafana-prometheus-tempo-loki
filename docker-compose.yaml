@@ -1,4 +1,4 @@
-version: "4"
+version: "3.3"
 services:
   mysql:
     image: mysql:8
@@ -18,7 +18,7 @@ services:
       - ./docker/tempo/tempo.yml:/etc/tempo.yaml:ro
       - ./docker/tempo/tempo-data:/tmp/tempo
     ports:
-      - "3110:3100"  # Tempo
+      - "3110:3200"  # Tempo
       - "9411:9411" # zipkin
 
   loki:
@@ -36,6 +36,8 @@ services:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
       - "9090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   grafana:
     image: grafana/grafana:10.1.0

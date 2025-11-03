@@ -1,0 +1,62 @@
+name: Spring Boot CI/CD (Self-hosted Ubuntu with Docker)
+
+on:
+  push:
+    branches: [ "develop" ]       # chỉ chạy khi push lên nhánh main
+    paths:
+      - "services/**"           # chỉ chạy khi có thay đổi trong thư mục service
+      - ".github/workflows/springboot-ci-cd.yaml"
+  pull_request:
+    branches: [ "develop" ]
+    paths:
+      - "services/**"
+      - ".github/workflows/springboot-ci-cd.yaml"
+  workflow_dispatch:            # có thể chạy thủ công trong tab Actions
+
+jobs:
+  build:
+    name: Build and Deploy Spring Boot App
+    runs-on: self-hosted        # chạy trên self-hosted runner (Ubuntu có Docker)
+
+    steps:
+      # 1️⃣ Checkout source code
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      # 2️⃣ Setup JDK 21
+      - name: Setup JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      # 3️⃣ Build Maven project (bỏ qua test)
+      - name: Build with Maven (skip tests)
+        run: mvn clean package -DskipTests -f services/loan-service/pom.xml
+
+      # 4️⃣ Build Docker image
+      - name: Build Docker image
+        run: |
+          IMAGE_NAME=loan-service-image
+          IMAGE_TAG=latest
+          docker build -t $IMAGE_NAME:$IMAGE_TAG ./service
+
+      # 5️⃣ Stop and remove old container (nếu đang chạy)
+      - name: Stop existing container
+        run: |
+          CONTAINER_NAME=loan-service-container
+          if [ "$(docker ps -aq -f name=$CONTAINER_NAME)" ]; then
+            docker stop $CONTAINER_NAME || true
+            docker rm $CONTAINER_NAME || true
+          fi
+
+      # 6️⃣ Run new Docker container
+      - name: Run new Docker container
+        run: |
+          CONTAINER_NAME=loan-service-container
+          IMAGE_NAME=loan-service-image
+          IMAGE_TAG=latest
+          docker run -d \
+            --name $CONTAINER_NAME \
+            -p 8080:8080 \
+            $IMAGE_NAME:$IMAGE_TAG
