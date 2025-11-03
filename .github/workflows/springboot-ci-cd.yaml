@@ -39,7 +39,7 @@ jobs:
         run: |
           IMAGE_NAME=loan-service-image
           IMAGE_TAG=latest
-          docker build -t $IMAGE_NAME:$IMAGE_TAG ./services
+          docker build -t $IMAGE_NAME:$IMAGE_TAG ./services/loan-service
 
       # 5️⃣ Stop and remove old container (nếu đang chạy)
       - name: Stop existing container
